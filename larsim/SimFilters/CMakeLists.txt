@@ -42,6 +42,16 @@ cet_build_plugin(FilterNoMCParticles art::SharedFilter
   fhiclcpp::fhiclcpp
 )
 
+cet_build_plugin(FilterNoSimEnergyDeposits art::SharedFilter
+  LIBRARIES PRIVATE
+  lardataobj::Simulation
+  art::Framework_Principal
+  messagefacility::MF_MessageLogger
+  canvas::canvas
+  fhiclcpp::types
+  fhiclcpp::fhiclcpp
+)
+
 cet_build_plugin(FilterPrimaryPDG art::EDFilter
   LIBRARIES PRIVATE
   larsim::MCCheater_ParticleInventoryService_service

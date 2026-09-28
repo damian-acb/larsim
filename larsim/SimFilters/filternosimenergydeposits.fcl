@@ -1,0 +1,67 @@
+# Example use of FilterNoSimEnergyDeposits.
+#
+# The filter sits in the simulation path between the ionisation and
+# scintillation step, which produces the sim::SimEnergyDeposit objects it
+# examines, and the detector simulation, whose per-event cost is what
+# dropping an empty event saves. Modules placed after the filter in the same
+# path are not run for a rejected event.
+#
+# The output module declares SelectEvents: [ simulate ], so only events for
+# which the whole simulate path succeeded -- and therefore only events the
+# filter accepted -- are written to the output file. SelectEvents applies to
+# any observer module, so a job that writes its results from an analyzer
+# rather than an output module should set the same parameter on the analyzer;
+# otherwise it is called for rejected events too, for which the products made
+# downstream of the filter do not exist.
+#
+# Services, the ionisation and detector simulation module configurations, and
+# the input file are all experiment specific and are left to be supplied by
+# the fcl that includes this one.
+
+process_name: SimFilter
+
+physics:
+{
+  filters:
+  {
+    nosimenergydeposits:
+    {
+      module_type: FilterNoSimEnergyDeposits
+
+      # Collections to examine; totals are summed over all of them. A
+      # refactored LArG4 stage may split its deposits across one instance
+      # name per volume, in which case list each one here.
+      SimEnergyDepositLabels: [ "IonAndScint" ]
+
+      # An event is accepted when it satisfies both thresholds. Setting
+      # either to zero disables it.
+      MinNumberOfDeposits: 1
+      MinTotalEnergy:      0.0   # MeV
+
+      # Set to false to treat a collection missing from the event as empty
+      # rather than as an error.
+      ThrowOnMissingProduct: true
+    }
+  }
+
+  # IonAndScint and the detector simulation stand in for the real modules;
+  # configure them in the including fcl.
+  simulate: [ IonAndScint, nosimenergydeposits, detsim ]
+
+  stream1:   [ out1 ]
+  trigger_paths: [ simulate ]
+  end_paths:     [ stream1 ]
+}
+
+outputs:
+{
+  out1:
+  {
+    module_type:  RootOutput
+    fileName:     "%ifb_filtered.root"
+    dataTier:     "detector-simulated"
+
+    # Only write events that made it to the end of the simulate path.
+    SelectEvents: [ simulate ]
+  }
+}
